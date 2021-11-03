@@ -6,9 +6,11 @@ public class Snake : MonoBehaviour, ILocation
 {
 	private Vector2 curDir = Vector2.right;
 	private Vector2 newDir = Vector2.right;
+	private Vector2 nextDir = Vector2.right;
 	private List<GameObject> body = new List<GameObject>();
-	private ILocation.Direction dir = ILocation.Direction.right;
-	private ILocation.Position pos = ILocation.Position.horizontal;
+	private ILocation.Direction direction = ILocation.Direction.right;
+	private ILocation.Direction nextDirection = ILocation.Direction.right;
+	private ILocation.Position position = ILocation.Position.horizontal;
 
 	public float velocity = 15f;
 	public GameObject bodyPrefab;
@@ -45,24 +47,44 @@ public class Snake : MonoBehaviour, ILocation
 	private void Update() {
 		// Get direction from input
 		if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A)) {
-			if(curDir != Vector2.right) {
+			if (newDir == Vector2.up || newDir == Vector2.down) {
+				nextDir = Vector2.left;
+				nextDirection = ILocation.Direction.left;
+			}
+
+			if (curDir == Vector2.up || curDir == Vector2.down) {
 				newDir = Vector2.left;
-				dir = ILocation.Direction.left;
+				direction = ILocation.Direction.left;
 			}
 		} else if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D)) {
-			if (curDir != Vector2.left) {
+			if (newDir == Vector2.up || newDir == Vector2.down) {
+				nextDir = Vector2.right;
+				nextDirection = ILocation.Direction.right;
+			}
+
+			if (curDir == Vector2.up || curDir == Vector2.down) {
 				newDir = Vector2.right;
-				dir = ILocation.Direction.right;
+				direction = ILocation.Direction.right;
 			}
 		} else if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W)) {
-			if (curDir != Vector2.down) {
+			if (newDir == Vector2.left || newDir == Vector2.right) {
+				nextDir = Vector2.up;
+				nextDirection = ILocation.Direction.up;
+			}
+
+			if (curDir == Vector2.left || curDir == Vector2.right) {
 				newDir = Vector2.up;
-				dir = ILocation.Direction.up;
+				direction = ILocation.Direction.up;
 			}
 		} else if (Input.GetKeyDown(KeyCode.DownArrow) || Input.GetKeyDown(KeyCode.S)) {
-			if (curDir != Vector2.up) {
+			if (newDir == Vector2.left || newDir == Vector2.right) {
+				nextDir = Vector2.down;
+				nextDirection = ILocation.Direction.down;
+			}
+
+			if (curDir == Vector2.left || curDir == Vector2.right) {
 				newDir = Vector2.down;
-				dir = ILocation.Direction.down;
+				direction = ILocation.Direction.down;
 			}
 		}
 	}
@@ -72,34 +94,34 @@ public class Snake : MonoBehaviour, ILocation
 		// Update positions
 		if(curDir == newDir) { // no change in direction
 			if(curDir == Vector2.left || curDir == Vector2.right) {	// horizontal position
-				pos = ILocation.Position.horizontal;
+				position = ILocation.Position.horizontal;
 			} else {												// vertical position
-				pos = ILocation.Position.vertical;
+				position = ILocation.Position.vertical;
 			}
 		} else { // direction changed
 			if(curDir == Vector2.right) {
 				if(newDir == Vector2.up) {		// right to up -> bottom right
-					pos = ILocation.Position.botRight;
+					position = ILocation.Position.botRight;
 				} else {						// right to down -> top right
-					pos = ILocation.Position.topRight;
+					position = ILocation.Position.topRight;
 				}
 			} else if(curDir == Vector2.left) {
 				if (newDir == Vector2.up) {		// left to up -> bottom left
-					pos = ILocation.Position.botLeft;
+					position = ILocation.Position.botLeft;
 				} else {						// left to down -> top left
-					pos = ILocation.Position.topLeft;
+					position = ILocation.Position.topLeft;
 				}
 			} else if (curDir == Vector2.up) {
 				if (newDir == Vector2.right) {	// up to right -> top left
-					pos = ILocation.Position.topLeft;
+					position = ILocation.Position.topLeft;
 				} else {						// up to left -> top right
-					pos = ILocation.Position.topRight;
+					position = ILocation.Position.topRight;
 				}
 			} else if (curDir == Vector2.down) {
 				if (newDir == Vector2.right) {	// down to right -> bottom left
-					pos = ILocation.Position.botLeft;
+					position = ILocation.Position.botLeft;
 				} else {						// down to left -> bottom right
-					pos = ILocation.Position.botRight;
+					position = ILocation.Position.botRight;
 				}
 			}
 		}
@@ -119,8 +141,8 @@ public class Snake : MonoBehaviour, ILocation
 		if(body.Count > 1) {
 			front = body[1].GetComponent<SnakeBody>();
 			body[1].transform.position = this.transform.position;
-			front.position = pos;
-			front.direction = dir;
+			front.position = position;
+			front.direction = direction;
 		}
 
 		// update head position
@@ -134,6 +156,8 @@ public class Snake : MonoBehaviour, ILocation
 		UpdateSprite();
 
 		curDir = newDir;
+		newDir = nextDir;
+		direction = nextDirection;
 	}
 
 	private void OnTriggerEnter2D(Collider2D collision) {
@@ -154,8 +178,8 @@ public class Snake : MonoBehaviour, ILocation
 		// update sprite
 		SnakeBody t = tail.GetComponent<SnakeBody>();
 		if (body.Count <= 1) {  // if had no tail, update tail
-			t.setTail(dir);
-			t.position = pos;
+			t.setTail(direction);
+			t.position = position;
 		} else {				// if had a tail, update tail and oldTail
 			SnakeBody oldTail = body[body.Count - 1].GetComponent<SnakeBody>();
 			t.setTail(oldTail.direction);
@@ -175,13 +199,13 @@ public class Snake : MonoBehaviour, ILocation
 
 	private void UpdateSprite() {
 		// update head sprite
-		if(dir == ILocation.Direction.right) {
+		if(direction == ILocation.Direction.right) {
 			spriteRenderer.sprite = headRight;
-		} else if (dir == ILocation.Direction.left) {
+		} else if (direction == ILocation.Direction.left) {
 			spriteRenderer.sprite = headLeft;
-		} else if (dir == ILocation.Direction.up) {
+		} else if (direction == ILocation.Direction.up) {
 			spriteRenderer.sprite = headUp;
-		} else if (dir == ILocation.Direction.down) {
+		} else if (direction == ILocation.Direction.down) {
 			spriteRenderer.sprite = headDown;
 		}
 
